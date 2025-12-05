@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Coins, Clock } from "lucide-react";
 import { TopUpModal } from "./TopUpModal";
+import { InvestModal, DEFI_PROTOCOLS } from "./InvestModal";
 
 interface GoalProps {
   title: string;
@@ -13,7 +14,11 @@ interface GoalProps {
   currentAmount: number;
   targetAmount: number;
   date: string;
+  investedAmount: number;
+  investedProtocol: string | null;
+  nextPayout: string | null;
   onTopUp: (amount: number) => void;
+  onInvest: (protocolId: string, amount: number) => void;
 }
 
 export const GoalCard = ({
@@ -24,16 +29,26 @@ export const GoalCard = ({
   currentAmount,
   targetAmount,
   date,
+  investedAmount,
+  investedProtocol,
+  nextPayout,
   onTopUp,
+  onInvest,
 }: GoalProps) => {
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
+  const [isInvestModalOpen, setIsInvestModalOpen] = useState(false);
+
+  const protocol = investedProtocol
+    ? DEFI_PROTOCOLS.find((p) => p.id === investedProtocol)
+    : null;
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -5 }}
-      className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 min-w-[300px] flex-1"
+      className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 w-full"
     >
       <div className="flex justify-between items-start mb-6">
         <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
@@ -64,12 +79,12 @@ export const GoalCard = ({
         </div>
       </div>
 
-      <div className="flex justify-between items-end mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
             Current
           </p>
-          <p className="text-xl font-bold text-gray-900">
+          <p className="text-lg sm:text-xl font-bold text-gray-900">
             ${currentAmount.toLocaleString()}
           </p>
         </div>
@@ -83,19 +98,42 @@ export const GoalCard = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+      {/* Next Payout */}
+      {nextPayout && protocol && (
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-base">{protocol.logo}</span>
+            <span>{protocol.name}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            <span>Payout: {nextPayout}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Goal Date & Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-gray-50 gap-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <div className="w-4 h-4 rounded-full border border-gray-200 flex items-center justify-center">
+          <div className="w-4 h-4 rounded-full border border-gray-200 flex items-center justify-center shrink-0">
             <div className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
           </div>
-          Goal: {date}
+          <span className="whitespace-nowrap">Goal: {date}</span>
         </div>
-        <button
-          onClick={() => setIsTopUpModalOpen(true)}
-          className="flex items-center gap-1 text-xs font-bold text-gray-900 hover:text-green-600 transition-colors border border-gray-200 rounded-full px-3 py-1.5 hover:border-green-600"
-        >
-          Top Up <Plus className="w-3 h-3" />
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => setIsInvestModalOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 text-xs font-bold text-purple-700 hover:text-purple-800 transition-colors border border-purple-200 rounded-full px-3 py-1.5 hover:border-purple-400 hover:bg-purple-50"
+          >
+            Invest <Coins className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => setIsTopUpModalOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 text-xs font-bold text-gray-900 hover:text-green-600 transition-colors border border-gray-200 rounded-full px-3 py-1.5 hover:border-green-600"
+          >
+            Top Up <Plus className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
       <TopUpModal
@@ -106,6 +144,14 @@ export const GoalCard = ({
         currentAmount={currentAmount}
         targetAmount={targetAmount}
         date={date}
+      />
+
+      <InvestModal
+        isOpen={isInvestModalOpen}
+        onClose={() => setIsInvestModalOpen(false)}
+        onInvest={onInvest}
+        goalTitle={title}
+        currentAmount={currentAmount}
       />
     </motion.div>
   );
