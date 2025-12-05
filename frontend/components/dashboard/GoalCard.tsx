@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { TopUpModal } from "./TopUpModal";
 
 interface GoalProps {
   title: string;
@@ -11,6 +13,7 @@ interface GoalProps {
   currentAmount: number;
   targetAmount: number;
   date: string;
+  onTopUp: (amount: number) => void;
 }
 
 export const GoalCard = ({
@@ -21,7 +24,9 @@ export const GoalCard = ({
   currentAmount,
   targetAmount,
   date,
+  onTopUp,
 }: GoalProps) => {
+  const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   return (
     <motion.div
       layout
@@ -85,10 +90,23 @@ export const GoalCard = ({
           </div>
           Goal: {date}
         </div>
-        <button className="flex items-center gap-1 text-xs font-bold text-gray-900 hover:text-green-600 transition-colors border border-gray-200 rounded-full px-3 py-1.5 hover:border-green-600">
+        <button
+          onClick={() => setIsTopUpModalOpen(true)}
+          className="flex items-center gap-1 text-xs font-bold text-gray-900 hover:text-green-600 transition-colors border border-gray-200 rounded-full px-3 py-1.5 hover:border-green-600"
+        >
           Top Up <Plus className="w-3 h-3" />
         </button>
       </div>
+
+      <TopUpModal
+        isOpen={isTopUpModalOpen}
+        onClose={() => setIsTopUpModalOpen(false)}
+        onTopUp={onTopUp}
+        goalTitle={title}
+        currentAmount={currentAmount}
+        targetAmount={targetAmount}
+        date={date}
+      />
     </motion.div>
   );
 };

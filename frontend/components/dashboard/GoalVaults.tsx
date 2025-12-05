@@ -4,8 +4,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { GoalCard } from "./GoalCard";
+import { CreateGoalModal } from "./CreateGoalModal";
 
-interface Goal {
+export interface Goal {
   id: number;
   title: string;
   badge: string;
@@ -41,19 +42,44 @@ const initialGoals: Goal[] = [
 
 export const GoalVaults = () => {
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const handleCreateGoal = () => {
+  const handleCreateGoal = (goalData: {
+    title: string;
+    targetAmount: number;
+    date: string;
+  }) => {
     const newGoal: Goal = {
       id: Date.now(),
-      title: "New Savings Goal",
-      badge: "Custom Vault",
-      apy: 5.0,
+      title: goalData.title,
+      badge: "Savings Vault",
+      apy: parseFloat((5.0 + Math.random() * 5).toFixed(1)), // Random APY between 5-10%
       progress: 0,
       currentAmount: 0,
-      targetAmount: 10000,
-      date: "Dec 2026",
+      targetAmount: goalData.targetAmount,
+      date: goalData.date,
     };
     setGoals([...goals, newGoal]);
+  };
+
+  const handleTopUp = (goalId: number, amount: number) => {
+    setGoals(
+      goals.map((goal) => {
+        if (goal.id === goalId) {
+          const newCurrentAmount = goal.currentAmount + amount;
+          const newProgress = Math.min(
+            Math.round((newCurrentAmount / goal.targetAmount) * 100),
+            100
+          );
+          return {
+            ...goal,
+            currentAmount: newCurrentAmount,
+            progress: newProgress,
+          };
+        }
+        return goal;
+      })
+    );
   };
 
   return (
@@ -71,12 +97,16 @@ export const GoalVaults = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <AnimatePresence mode="popLayout">
           {goals.map((goal) => (
-            <GoalCard key={goal.id} {...goal} />
+            <GoalCard
+              key={goal.id}
+              {...goal}
+              onTopUp={(amount) => handleTopUp(goal.id, amount)}
+            />
           ))}
 
           <motion.button
             layout
-            onClick={handleCreateGoal}
+            onClick={() => setIsCreateModalOpen(true)}
             whileHover={{
               scale: 1.02,
               backgroundColor: "rgba(255, 255, 255, 0.8)",
@@ -96,6 +126,12 @@ export const GoalVaults = () => {
           </motion.button>
         </AnimatePresence>
       </div>
+
+      <CreateGoalModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateGoal={handleCreateGoal}
+      />
     </section>
   );
 };
