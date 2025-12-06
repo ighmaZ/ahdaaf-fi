@@ -5,6 +5,7 @@ import { ConnectButton } from "thirdweb/react";
 import { client } from "@/lib/thirdwebClient";
 import { bnbTestnet } from "@/lib/tokens";
 import { Leaf, Zap } from "lucide-react";
+import { Globe } from "@/components/ui/Globe";
 
 export const LandingPage = () => {
   return (
@@ -148,8 +149,9 @@ export const LandingPage = () => {
       </motion.div>
 
       {/* Decorative Planet/Circle Graphic */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[800px] h-[800px] rounded-full border border-white/5 opacity-50 pointer-events-none">
-        <div className="absolute inset-0 rounded-full border border-teal-500/20 animate-pulse" />
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[800px] h-[800px] rounded-full border border-white/5 pointer-events-none">
+        <div className="absolute inset-0 rounded-full border border-teal-500/20 animate-pulse z-10" />
+        <Globe className="absolute inset-0 w-full h-full opacity-40" />
       </div>
     </div>
   );
