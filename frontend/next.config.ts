@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  webpack: (config) => {
+    // ignore thread-stream's test files so Vercel doesn't try to bundle them
+    config.module.noParse = [/thread-stream[\\/]test/];
+    return config;
+  },
 };
 
 export default nextConfig;
