@@ -1,9 +1,19 @@
+"use client";
+
+import { useActiveAccount } from "thirdweb/react";
 import { TopNav } from "@/components/dashboard/TopNav";
 import { Header } from "@/components/dashboard/Header";
 import { GoalVaults } from "@/components/dashboard/GoalVaults";
 import { Discovery } from "@/components/dashboard/Discovery";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 export default function Home() {
+  const account = useActiveAccount();
+
+  if (!account) {
+    return <LandingPage />;
+  }
+
   return (
     <main className="min-h-screen bg-[#F3F5F7] pb-20 relative overflow-hidden">
       {/* Palm Background Texture */}
