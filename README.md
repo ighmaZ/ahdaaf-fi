@@ -119,6 +119,20 @@ Add funds to your vaults seamlessly:
 
 ---
 
+## Contract Details
+
+### MockERC20 (USDT)
+
+**Address:** `0x1E685A5d614aB471d5943bFD5A88A994524a2DD0`  
+**Verified:** ✅ https://testnet.bscscan.com/address/0x1E685A5d614aB471d5943bFD5A88A994524a2DD0#code
+
+### AhdaafPoolV1 (Mudarabah Pool)
+
+**Address:** `0x44a36337732c083B7A7E0C13530aAb27f3738b41`  
+**Verified:** ✅ https://testnet.bscscan.com/address/0x44a36337732c083B7A7E0C13530aAb27f3738b41#code
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer          | Technology                       |

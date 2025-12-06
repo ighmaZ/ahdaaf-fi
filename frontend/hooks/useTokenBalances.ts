@@ -34,25 +34,25 @@ export function useTokenBalances() {
     try {
       const tokenBalances: TokenBalance[] = [];
 
-      // Fetch BUSN token balance
-      const busnContract = getContract({
+      // Fetch USDT (MockERC20) token balance
+      const usdtContract = getContract({
         client,
         chain: bnbTestnet,
-        address: TOKENS.BUSN.address,
+        address: TOKENS.USDT.address,
       });
 
-      const busnBalance = await balanceOf({
-        contract: busnContract,
+      const usdtBalance = await balanceOf({
+        contract: usdtContract,
         address: account.address,
       });
 
       tokenBalances.push({
-        symbol: "BUSN",
-        name: TOKENS.BUSN.name,
-        balance: formatBalance(busnBalance, TOKENS.BUSN.decimals),
-        rawBalance: busnBalance,
-        decimals: TOKENS.BUSN.decimals,
-        logo: TOKENS.BUSN.logo,
+        symbol: "USDT",
+        name: TOKENS.USDT.name,
+        balance: formatBalance(usdtBalance, TOKENS.USDT.decimals),
+        rawBalance: usdtBalance,
+        decimals: TOKENS.USDT.decimals,
+        logo: TOKENS.USDT.logo,
       });
 
       setBalances(tokenBalances);

@@ -86,8 +86,8 @@ export const LandingPage = () => {
               className="text-lg text-gray-600 max-w-xl mb-10 leading-relaxed"
             >
               Ahdaaf-Fi is an AI-powered, Shariah-compliant DeFi platform on BNB
-              Chain. Filter yield opportunities, set goal-based vaults, and grow
-              your savings ethically.
+              Chain. Filter profit opportunities, set goal-based vaults, and
+              grow your savings ethically.
             </motion.p>
           </div>
 

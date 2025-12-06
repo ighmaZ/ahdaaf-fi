@@ -3,14 +3,14 @@ import { defineChain } from "thirdweb";
 // BNB Chain Testnet
 export const bnbTestnet = defineChain(97);
 
-// Test token on BNB Chain Testnet
+// Tokens on BNB Chain Testnet
 export const TOKENS = {
-  BUSN: {
-    address: "0x622751a38CDaF0C563359AdC50796B736ee2Cd2a" as const,
-    symbol: "BUSN",
-    decimals: 18,
-    name: "BUSN Test Token",
-    logo: "🧪",
+  USDT: {
+    address: "0x1E685A5d614aB471d5943bFD5A88A994524a2DD0" as const, // MockERC20 deployed contract
+    symbol: "USDT",
+    decimals: 6,
+    name: "Tether USDt",
+    logo: "💵",
   },
 } as const;
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Bell, ChevronDown, Wallet } from "lucide-react";
+import { Bell, ChevronDown, Wallet, Search } from "lucide-react";
 import Image from "next/image";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client } from "@/lib/thirdwebClient";
 import { useTokenBalances } from "@/hooks/useTokenBalances";
 import { bnbTestnet } from "@/lib/tokens";
+import { CustomWalletButton } from "./CustomWalletButton";
 
 export const TopNav = () => {
   const account = useActiveAccount();
@@ -98,7 +99,11 @@ export const TopNav = () => {
           </div>
         )}
 
-        <ConnectButton client={client} chain={bnbTestnet} />
+        {account ? (
+          <CustomWalletButton />
+        ) : (
+          <ConnectButton client={client} chain={bnbTestnet} />
+        )}
 
         <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-pink-500 p-[2px]">
           <div className="w-full h-full rounded-full bg-white overflow-hidden relative">

@@ -113,7 +113,7 @@ export const CreateGoalModal = ({
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g., Hajj Fund 2026"
+                        placeholder="e.g., MSc in Mathematics"
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                         required
                       />

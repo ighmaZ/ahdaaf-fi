@@ -1,21 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Globe, CircleDollarSign } from "lucide-react";
+import { ShieldCheck, Globe, CircleDollarSign } from "lucide-react";
 
 const strategies = [
   {
     id: 1,
-    name: "Venus Protocol Supply",
+    name: "BNB Shariah Earn",
     tags: ["Halal", "Low Risk"],
     pair: "USDT",
-    tvl: "$45.2M",
-    apy: "8.4%",
-    icon: "bg-blue-100", // Placeholder for icon
+    tvl: "$12.8M",
+    apy: "12.1%",
+    icon: "bg-cyan-100", // Placeholder for icon
   },
   {
     id: 2,
-    name: "PancakeSwap Stable",
+    name: "PancakeSwap Liquidity Provision",
     tags: ["Halal", "Medium Risk"],
     pair: "USDT-BUSD",
     tvl: "$12.8M",
@@ -31,7 +31,7 @@ export const Discovery = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-1">Discovery</h2>
           <p className="text-sm text-gray-500">
-            Curated yield strategies on BNB Chain
+            Explore our profit strategies on BNB Chain
           </p>
         </div>
 
@@ -89,23 +89,6 @@ export const Discovery = () => {
                 </p>
                 <p className="text-gray-900 font-bold">{strategy.tvl}</p>
               </div>
-
-              <div className="text-right md:text-left">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                  APY
-                </p>
-                <p className="text-green-600 font-bold text-lg">
-                  {strategy.apy}
-                </p>
-              </div>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-[#1F854E] text-white px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#156B3D] transition-colors shadow-lg shadow-green-900/10"
-              >
-                Invest <ArrowRight className="w-4 h-4" />
-              </motion.button>
             </div>
           </motion.div>
         ))}

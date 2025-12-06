@@ -3,13 +3,28 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, DollarSign, TrendingUp } from "lucide-react";
+import {
+  X,
+  Wallet,
+  DollarSign,
+  TrendingUp,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { useActiveAccount } from "thirdweb/react";
+import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract } from "thirdweb/contract";
+import { client } from "@/lib/thirdwebClient";
+import { bnbTestnet } from "@/lib/tokens";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
+import { TOKENS } from "@/lib/tokens";
 
 interface TopUpModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTopUp: (amount: number) => void;
   goalTitle: string;
+  goalId: number;
   currentAmount: number;
   targetAmount: number;
   date: string;
@@ -20,12 +35,16 @@ export const TopUpModal = ({
   onClose,
   onTopUp,
   goalTitle,
+  goalId,
   currentAmount,
   targetAmount,
   date,
 }: TopUpModalProps) => {
+  const account = useActiveAccount();
   const [amount, setAmount] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -39,16 +58,110 @@ export const TopUpModal = ({
     (a) => a > 0
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!amount || parseFloat(amount) <= 0) return;
+    if (!amount || parseFloat(amount) <= 0 || !account) {
+      setError("Please enter a valid amount and connect your wallet");
+      return;
+    }
 
-    onTopUp(parseFloat(amount));
+    setIsLoading(true);
+    setError(null);
 
-    // Reset form
-    setAmount("");
-    onClose();
+    try {
+      // Convert amount to token units (USDT has 6 decimals)
+      const amountInWei = BigInt(
+        Math.floor(parseFloat(amount) * 10 ** TOKENS.USDT.decimals)
+      );
+
+      // Get contract instances
+      const tokenContract = getContract({
+        client,
+        chain: bnbTestnet,
+        address: CONTRACT_ADDRESSES.MOCK_ERC20,
+      });
+
+      const poolContract = getContract({
+        client,
+        chain: bnbTestnet,
+        address: CONTRACT_ADDRESSES.AHDAAF_POOL,
+      });
+
+      // Step 1: Check and approve token spending
+      const { allowance } = await import("thirdweb/extensions/erc20");
+
+      const currentAllowance = await allowance({
+        contract: tokenContract,
+        owner: account.address,
+        spender: CONTRACT_ADDRESSES.AHDAAF_POOL,
+      });
+
+      if (currentAllowance < amountInWei) {
+        // Need to approve
+        const { approve } = await import("thirdweb/extensions/erc20");
+        const approveTx = approve({
+          contract: tokenContract,
+          spender: CONTRACT_ADDRESSES.AHDAAF_POOL,
+          amount: amountInWei,
+        });
+
+        const approveResult = await sendTransaction({
+          transaction: approveTx,
+          account,
+        });
+
+        await waitForReceipt(approveResult);
+      }
+
+      // Step 2: Call deposit function on pool contract
+      const depositTx = prepareContractCall({
+        contract: poolContract,
+        method: "function deposit(uint256 goalId, uint256 amount) external",
+        params: [BigInt(goalId), amountInWei],
+      });
+
+      const depositResult = await sendTransaction({
+        transaction: depositTx,
+        account,
+      });
+
+      await waitForReceipt(depositResult);
+
+      // Call the onTopUp callback for UI updates
+      onTopUp(parseFloat(amount));
+
+      // Reset form and close
+      setAmount("");
+      onClose();
+    } catch (err: any) {
+      console.error("Transaction error:", err);
+
+      // Handle different error types
+      let errorMessage = "Transaction failed. Please try again.";
+
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      } else if (err?.reason) {
+        errorMessage = err.reason;
+      } else if (err?.error?.message) {
+        errorMessage = err.error.message;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.shortMessage) {
+        errorMessage = err.shortMessage;
+      } else if (err?.code === 4001) {
+        errorMessage = "Transaction rejected by user";
+      } else if (err?.code === "ACTION_REJECTED") {
+        errorMessage = "Transaction rejected by user";
+      }
+
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleQuickAmount = (value: number) => {
@@ -205,14 +318,30 @@ export const TopUpModal = ({
                     </div>
                   )}
 
+                  {/* Error Message */}
+                  {error && (
+                    <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 rounded-xl p-3">
+                      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
                   {/* Submit Button */}
                   <motion.button
                     type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full py-4 bg-[#1F854E] text-white font-bold rounded-xl hover:bg-green-700 transition-colors"
+                    disabled={isLoading || !account}
+                    whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                    whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                    className="w-full py-4 bg-[#1F854E] text-white font-bold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Add Funds
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Add Funds"
+                    )}
                   </motion.button>
                 </form>
               </div>

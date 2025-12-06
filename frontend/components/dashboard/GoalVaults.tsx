@@ -60,8 +60,8 @@ const getNextPayoutDate = (protocolId: string): string => {
 const initialGoals: Goal[] = [
   {
     id: 1,
-    title: "Hajj Fund 2026",
-    badge: "Hajj Vault",
+    title: "MSc in Mathematics",
+    badge: "Education Vault",
     apy: 8.5,
     progress: 56,
     currentAmount: 8450,
@@ -155,7 +155,7 @@ export const GoalVaults = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-1 h-5 sm:h-6 bg-[#1F854E] rounded-full" />
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-            My Goal Vaults
+            My Goals
           </h2>
         </div>
         <button className="text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">

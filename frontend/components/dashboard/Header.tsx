@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldCheck, TrendingUp, Wallet, PieChart } from "lucide-react";
+import { TrendingUp, Wallet, PieChart } from "lucide-react";
 
 export const Header = () => {
   return (
@@ -27,15 +27,11 @@ export const Header = () => {
               <TrendingUp className="w-4 h-4" />
               +$1,240.50 (5.2%)
             </div>
-            <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 text-sm font-medium">
-              <ShieldCheck className="w-4 h-4" />
-              100% Halal
-            </div>
           </div>
         </div>
       </motion.div>
 
-      {/* Total Yield Earned */}
+      {/* Total Profit Earned */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -44,7 +40,7 @@ export const Header = () => {
       >
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-gray-500 text-xs font-bold tracking-wider uppercase">
-            Total Yield Earned
+            Total Profit Earned
           </h3>
           <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
             <PieChart className="w-4 h-4 text-green-600" />
@@ -63,7 +59,7 @@ export const Header = () => {
         </div>
       </motion.div>
 
-      {/* Available Liquidity */}
+      {/* Available Capital */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -72,7 +68,7 @@ export const Header = () => {
       >
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-gray-500 text-xs font-bold tracking-wider uppercase">
-            Available Liquidity
+            Available Capital
           </h3>
           <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
             <Wallet className="w-4 h-4 text-green-600" />

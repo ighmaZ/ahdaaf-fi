@@ -3,7 +3,21 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, Coins, AlertCircle, Clock } from "lucide-react";
+import {
+  X,
+  TrendingUp,
+  Coins,
+  AlertCircle,
+  Clock,
+  Loader2,
+} from "lucide-react";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract } from "thirdweb/contract";
+import { client } from "@/lib/thirdwebClient";
+import { bnbTestnet } from "@/lib/tokens";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
+import { TOKENS } from "@/lib/tokens";
 
 export interface DeFiProtocol {
   id: string;
@@ -74,6 +88,7 @@ interface InvestModalProps {
   onClose: () => void;
   onInvest: (protocolId: string, amount: number) => void;
   goalTitle: string;
+  goalId: number;
   currentAmount: number;
 }
 
@@ -82,13 +97,18 @@ export const InvestModal = ({
   onClose,
   onInvest,
   goalTitle,
+  goalId,
   currentAmount,
 }: InvestModalProps) => {
+  const account = useActiveAccount();
   const [selectedProtocol, setSelectedProtocol] = useState<DeFiProtocol | null>(
     null
   );
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"select" | "confirm">("select");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   const handleProtocolSelect = (protocol: DeFiProtocol) => {
     setSelectedProtocol(protocol);
@@ -101,17 +121,96 @@ export const InvestModal = ({
     setAmount("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProtocol || !amount || parseFloat(amount) <= 0) return;
+    if (!selectedProtocol || !amount || parseFloat(amount) <= 0 || !account)
+      return;
 
-    onInvest(selectedProtocol.id, parseFloat(amount));
+    setIsLoading(true);
+    setError(null);
+    setTxHash(null);
 
-    // Reset form
-    setAmount("");
-    setSelectedProtocol(null);
-    setStep("select");
-    onClose();
+    try {
+      // Convert amount to token units (USDT has 6 decimals)
+      const amountInWei = BigInt(
+        Math.floor(parseFloat(amount) * 10 ** TOKENS.USDT.decimals)
+      );
+
+      // Get contract instances
+      const tokenContract = getContract({
+        client,
+        chain: bnbTestnet,
+        address: CONTRACT_ADDRESSES.MOCK_ERC20,
+      });
+
+      const poolContract = getContract({
+        client,
+        chain: bnbTestnet,
+        address: CONTRACT_ADDRESSES.AHDAAF_POOL,
+      });
+
+      // Step 1: Check and approve token spending
+      const { allowance, approve } = await import("thirdweb/extensions/erc20");
+
+      const currentAllowance = await allowance({
+        contract: tokenContract,
+        owner: account.address,
+        spender: CONTRACT_ADDRESSES.AHDAAF_POOL,
+      });
+
+      if (currentAllowance < amountInWei) {
+        // Need to approve
+        const approveTx = prepareContractCall({
+          contract: tokenContract,
+          method: approve({
+            contract: tokenContract,
+            spender: CONTRACT_ADDRESSES.AHDAAF_POOL,
+            amount: amountInWei,
+          }),
+        });
+
+        const approveResult = await sendTransaction({
+          transaction: approveTx,
+          account,
+        });
+
+        await waitForReceipt(approveResult);
+      }
+
+      // Step 2: Call deposit function
+      const depositTx = prepareContractCall({
+        contract: poolContract,
+        method: "function deposit(uint256 goalId, uint256 amount) external",
+        params: [BigInt(goalId), amountInWei],
+      });
+
+      const depositResult = await sendTransaction({
+        transaction: depositTx,
+        account,
+      });
+
+      const receipt = await waitForReceipt(depositResult);
+      setTxHash(receipt.transactionHash);
+
+      // Call the onInvest callback for UI updates
+      onInvest(selectedProtocol.id, parseFloat(amount));
+
+      // Reset form and close
+      setAmount("");
+      setSelectedProtocol(null);
+      setStep("select");
+
+      // Close modal after a short delay to show success
+      setTimeout(() => {
+        onClose();
+        setTxHash(null);
+      }, 2000);
+    } catch (err: any) {
+      console.error("Transaction error:", err);
+      setError(err?.message || "Transaction failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const [mounted, setMounted] = useState(false);
@@ -242,9 +341,6 @@ export const InvestModal = ({
                                 {protocol.type} • {protocol.network}
                               </p>
                               <div className="flex flex-wrap items-center gap-2 mt-2">
-                                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                  {protocol.apy}% APY
-                                </span>
                                 <span
                                   className={`text-[10px] font-bold px-2 py-1 rounded-full ${getRiskColor(
                                     protocol.riskLevel
@@ -298,12 +394,6 @@ export const InvestModal = ({
                           </button>
                         </div>
                         <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-purple-100">
-                          <div className="flex items-center gap-1 text-sm">
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                            <span className="font-bold text-green-600">
-                              {selectedProtocol?.apy}% APY
-                            </span>
-                          </div>
                           <div className="flex items-center gap-1 text-sm text-gray-600">
                             <Clock className="w-4 h-4" />
                             <span>
@@ -377,7 +467,7 @@ export const InvestModal = ({
                           <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                             Estimated Returns
                           </p>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <div>
                               <p className="text-xs text-gray-500">Monthly</p>
                               <p className="font-bold text-green-600">
@@ -399,40 +489,75 @@ export const InvestModal = ({
                                 ).toFixed(2)}
                               </p>
                             </div>
-                            <div>
-                              <p className="text-xs text-gray-500">APY</p>
-                              <p className="font-bold text-green-600">
-                                {selectedProtocol.apy}%
-                              </p>
-                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Error Message */}
+                      {error && (
+                        <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 rounded-xl p-3">
+                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>{error}</span>
+                        </div>
+                      )}
+
+                      {/* Success Message */}
+                      {txHash && (
+                        <div className="flex items-start gap-2 text-xs text-green-700 bg-green-50 rounded-xl p-3">
+                          <TrendingUp className="w-4 h-4 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="font-semibold mb-1">
+                              Transaction successful!
+                            </p>
+                            <a
+                              href={`https://testnet.bscscan.com/tx/${txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline hover:no-underline"
+                            >
+                              View on BSCScan
+                            </a>
                           </div>
                         </div>
                       )}
 
                       {/* Warning */}
-                      <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-xl p-3">
-                        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                        <span>
-                          DeFi investments carry risks including smart contract
-                          vulnerabilities and impermanent loss. Only invest what
-                          you can afford to lose.
-                        </span>
-                      </div>
+                      {!error && !txHash && (
+                        <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-xl p-3">
+                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>
+                            DeFi investments carry risks including smart
+                            contract vulnerabilities and impermanent loss. Only
+                            invest what you can afford to lose.
+                          </span>
+                        </div>
+                      )}
 
                       {/* Submit Button */}
                       <motion.button
                         type="submit"
                         disabled={
+                          isLoading ||
                           !amount ||
                           parseFloat(amount) <
-                            (selectedProtocol?.minInvestment || 0)
+                            (selectedProtocol?.minInvestment || 0) ||
+                          !account
                         }
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.98 }}
                         className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <Coins className="w-5 h-5" />
-                        Invest ${amount || "0"}
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Coins className="w-5 h-5" />
+                            Invest ${amount || "0"}
+                          </>
+                        )}
                       </motion.button>
                     </form>
                   )}
